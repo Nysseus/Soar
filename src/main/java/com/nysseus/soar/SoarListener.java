@@ -2,6 +2,7 @@ package com.nysseus.soar;
 
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.ability.CoreAbility;
+import com.projectkorra.projectkorra.airbending.AirScooter;
 import com.projectkorra.projectkorra.airbending.Suffocate;
 import com.projectkorra.projectkorra.util.MovementHandler;
 import com.projectkorra.projectkorra.waterbending.blood.Bloodbending;
@@ -34,7 +35,13 @@ public class SoarListener implements Listener {
 
         if (event.getPlayer().isSneaking()) return;
 
-        if (bPlayer.canBend(CoreAbility.getAbility(Soar.class))) {
+        Soar soar = CoreAbility.getAbility(player, Soar.class);
+
+        if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER) && !player.isSneaking()) {
+            soar.usageType = Soar.UsageType.SOAR;
+        }
+
+        if (soar == null && bPlayer.canBend(CoreAbility.getAbility(Soar.class))) {
             new Soar(player, Soar.UsageType.SOAR);
         }
     }
@@ -61,9 +68,17 @@ public class SoarListener implements Listener {
         if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.isCancelled()) return;
 
         Soar soar = CoreAbility.getAbility(player, Soar.class);
-        if (soar != null) {
-            soar.CancelMove();
-        } else if (bPlayer.canBend(CoreAbility.getAbility(Soar.class))) {
+
+        if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER)) {
+            soar.CancelMove(false);
+        }
+        if (soar != null && soar.usageType.equals(Soar.UsageType.SOAR)) {
+            soar.usageType = Soar.UsageType.HOVER;
+        }
+        if (soar != null && soar.usageType.equals(Soar.UsageType.SOAR)) {
+            soar.usageType = Soar.UsageType.HOVER;
+        }
+        if (soar == null && bPlayer.canBend(CoreAbility.getAbility(Soar.class))) {
             new Soar(player, Soar.UsageType.HOVER);
         }
     }

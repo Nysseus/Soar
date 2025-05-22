@@ -2,10 +2,15 @@ package com.nysseus.soar;
 
 import com.projectkorra.projectkorra.ProjectKorra;
 import com.projectkorra.projectkorra.ability.AddonAbility;
+import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.ability.FlightAbility;
+import com.projectkorra.projectkorra.airbending.AirScooter;
+import com.projectkorra.projectkorra.airbending.AirSpout;
 import com.projectkorra.projectkorra.configuration.ConfigManager;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -13,12 +18,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.permissions.Permission;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
+
 
 public class Soar extends FlightAbility implements AddonAbility {
     public enum UsageType {
         SOAR, HOVER
     }
-    private UsageType usageType;
+    protected UsageType usageType;
 
     Listener listener;
     private long cooldown;
@@ -27,6 +34,9 @@ public class Soar extends FlightAbility implements AddonAbility {
     private boolean isHovering;
     private float hoverSpeed;
 
+    private static ArrayList<Class> abilitiesToRemove = new ArrayList<>();
+
+
     public Soar(Player player, UsageType usage) {
         super(player);
         usageType = usage;
@@ -34,29 +44,28 @@ public class Soar extends FlightAbility implements AddonAbility {
         cooldown = ConfigManager.defaultConfig.get().getLong("ExtraAbilities.Nysseus.Soar.Cooldown", 10000);
         FlightEnabled = ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.FlightEnabled", true);
         HoverEnabled = ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.HoverEnabled", true);
-        hoverSpeed = (float) ConfigManager.defaultConfig.get().getDouble("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.3);
+        hoverSpeed = (float) ConfigManager.defaultConfig.get().getDouble("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.03);
 
         isHovering = false;
 
+        if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType().equals(Material.WATER)) {
+            CancelMove(true);
+        }
         if (usageType.equals(UsageType.SOAR) && !FlightEnabled) {
             remove();
         }
-
         if (usageType.equals(UsageType.HOVER) && !HoverEnabled) {
             remove();
         }
 
-        if (usageType.equals(UsageType.HOVER)) {
-            if (isOnGround()) {
-                Location loc = player.getLocation();
-                getAirbendingParticles().display(loc, 30, (Math.random()), 0.3, (Math.random()));
-                playAirbendingSound(loc);
-                Vector vector = new Vector(0, 2, 0);
-                player.setVelocity(vector);
-            }
-            isHovering = true;
-            player.setFlying(true);
-            player.setFlySpeed(hoverSpeed);
+        if (isOnGround() && usageType.equals(UsageType.HOVER)) {
+            Location loc = player.getLocation();
+            player.setAllowFlight(true);
+            getAirbendingParticles().display(loc, 30, (Math.random()), 0.3, (Math.random()));
+            playAirbendingSound(loc);
+            Vector vector = new Vector(0, 2, 0);
+            player.setVelocity(vector);
+            Bukkit.getScheduler().runTask(ProjectKorra.plugin, () -> player.setFlying(true));
         }
 
         start();
@@ -67,41 +76,74 @@ public class Soar extends FlightAbility implements AddonAbility {
         return loc.getBlock().getRelative(BlockFace.DOWN).getType().isSolid();
     }
 
-    public void CancelMove() {
-        if(!(player.getGameMode().equals(GameMode.CREATIVE) || player.getGameMode().equals(GameMode.SPECTATOR)) && usageType.equals(UsageType.HOVER)) {
+    public void CancelMove(boolean override) {
+        if((usageType.equals(UsageType.HOVER) || override) &&
+                !(player.getGameMode().equals(GameMode.CREATIVE) || player.getGameMode().equals(GameMode.SPECTATOR))) {
+
             player.setFlying(false);
-        }
-        if (usageType.equals(UsageType.HOVER)) {
+            player.setAllowFlight(false);
             isHovering = false;
         }
-
+        player.setFlySpeed(0.1f);
+        player.setGliding(false);
         bPlayer.addCooldown(this);
         remove();
     }
 
+
     @Override
     public void progress() {
-        if (!bPlayer.canBendIgnoreCooldowns(this)) {
-            if(!(player.getGameMode().equals(GameMode.CREATIVE) || player.getGameMode().equals(GameMode.SPECTATOR))) {
-                player.setFlying(false);
-            }
-            remove();
-            bPlayer.addCooldown(this);
+        if (!bPlayer.canBendIgnoreCooldowns(this) || isWater(this.player.getLocation().getBlock())) {
+            CancelMove(true);
             return;
         }
 
-        if (usageType.equals(UsageType.SOAR) && !isOnGround() && player.isSneaking()) {
-            Vector direction = player.getEyeLocation().getDirection();
-            player.setVelocity(direction.clone().multiply(2));
-        } else if (usageType.equals(UsageType.SOAR)) {
-            CancelMove();
+        for (Class clazz : abilitiesToRemove) {
+            if (CoreAbility.getAbility(player, clazz) != null) {
+                CoreAbility.getAbility(player, clazz).remove();
+                if(usageType.equals(UsageType.HOVER)) {
+                    player.setFlySpeed(hoverSpeed);
+                    player.setAllowFlight(true);
+                    player.setFlying(true);
+                }
+            }
         }
 
+        if (usageType.equals(UsageType.SOAR) && player.isSneaking()) {
+            Vector direction = player.getEyeLocation().getDirection();
+            if (!player.isGliding()) {
+                player.setGliding(true);
+            }
+            if (player.isFlying()) {
+                player.setFlying(false);
+               player.setAllowFlight(false);
+            }
+            player.setVelocity(direction.clone().multiply(1.5));
+        } else if (usageType.equals(UsageType.SOAR) && (System.currentTimeMillis() > this.getStartTime() + 500) && isOnGround()) {
+            CancelMove(false);
+        }
+        if (usageType.equals(UsageType.SOAR) && !player.isSneaking()) {
+            CancelMove(false);
+        }
+
+        if (usageType.equals(UsageType.SOAR)) {
+            if (player.isGliding() == false) {
+                player.setGliding(true);
+            }
+        }
+
+        if (usageType.equals(UsageType.HOVER)) {
+            isHovering = true;
+
+            player.setAllowFlight(true);
+            player.setFlySpeed(hoverSpeed);
+            player.setFlying(true);
+        }
         if (usageType.equals(UsageType.HOVER) &&
                 isOnGround() &&
                 (System.currentTimeMillis() > this.getStartTime() + 500) &&
                 isHovering) {
-            CancelMove();
+            CancelMove(false);
         }
     }
 
@@ -139,13 +181,16 @@ public class Soar extends FlightAbility implements AddonAbility {
 
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.Cooldown", 10000);
 
-        ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.3);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.03);
 
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.HoverEnabled", true);
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.FlightEnabled", true);
         ConfigManager.defaultConfig.save();
 
         ProjectKorra.plugin.getLogger().info(getName() + " " + getVersion() + " by " + getAuthor() + " has been successfully enabled.");
+
+        abilitiesToRemove.add(AirScooter.class);
+        abilitiesToRemove.add(AirSpout.class);
     }
 
     @Override
@@ -164,4 +209,16 @@ public class Soar extends FlightAbility implements AddonAbility {
         return "1.0";
     }
 
+    @Override
+    public boolean isDefault() { return false; }
+
+    @Override
+    public String getDescription() {
+        return "Become empty and become wind.";
+    }
+
+    @Override
+    public String getInstructions() {
+        return "Pressing left-click with this ability will allow you to hover. Holding sneak while in the air will propel you wherever you look.";
+    }
 }
