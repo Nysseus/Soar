@@ -29,10 +29,11 @@ public class Soar extends FlightAbility implements AddonAbility {
 
     Listener listener;
     private long cooldown;
-    private boolean FlightEnabled;
-    private boolean HoverEnabled;
+    protected boolean FlightEnabled;
+    protected boolean HoverEnabled;
     private boolean isHovering;
     private float hoverSpeed;
+    private long Duration;
 
     private static ArrayList<Class> abilitiesToRemove = new ArrayList<>();
 
@@ -42,6 +43,7 @@ public class Soar extends FlightAbility implements AddonAbility {
         usageType = usage;
 
         cooldown = ConfigManager.defaultConfig.get().getLong("ExtraAbilities.Nysseus.Soar.Cooldown", 10000);
+        Duration = ConfigManager.defaultConfig.get().getLong("ExtraAbilities.Nysseus.Soar.Duration", 120000);
         FlightEnabled = ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.FlightEnabled", true);
         HoverEnabled = ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.HoverEnabled", true);
         hoverSpeed = (float) ConfigManager.defaultConfig.get().getDouble("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.03);
@@ -53,9 +55,11 @@ public class Soar extends FlightAbility implements AddonAbility {
         }
         if (usageType.equals(UsageType.SOAR) && !FlightEnabled) {
             remove();
+            return;
         }
         if (usageType.equals(UsageType.HOVER) && !HoverEnabled) {
             remove();
+            return;
         }
 
         if (isOnGround() && usageType.equals(UsageType.HOVER)) {
@@ -93,8 +97,21 @@ public class Soar extends FlightAbility implements AddonAbility {
 
     @Override
     public void progress() {
-        if (!bPlayer.canBendIgnoreCooldowns(this) || isWater(this.player.getLocation().getBlock())) {
+        if (!bPlayer.canBendIgnoreCooldowns(this) ||
+                isWater(this.player.getLocation().getBlock()) ||
+                ((System.currentTimeMillis() > this.getStartTime() + Duration) && Duration >= 0) ||
+                (usageType.equals(UsageType.SOAR) && !FlightEnabled) ||
+                (usageType.equals(UsageType.HOVER) && !HoverEnabled)) {
             CancelMove(true);
+            return;
+        }
+
+        if (usageType.equals(UsageType.SOAR) && !FlightEnabled) {
+            CancelMove(false);
+            return;
+        }
+        if (usageType.equals(UsageType.HOVER) && !HoverEnabled) {
+            CancelMove(false);
             return;
         }
 
@@ -119,7 +136,8 @@ public class Soar extends FlightAbility implements AddonAbility {
                player.setAllowFlight(false);
             }
             player.setVelocity(direction.clone().multiply(1.5));
-        } else if (usageType.equals(UsageType.SOAR) && (System.currentTimeMillis() > this.getStartTime() + 500) && isOnGround()) {
+        }
+        if (usageType.equals(UsageType.SOAR) && (System.currentTimeMillis() > this.getStartTime() + 500) && isOnGround()) {
             CancelMove(false);
         }
         if (usageType.equals(UsageType.SOAR) && !player.isSneaking()) {
@@ -127,7 +145,7 @@ public class Soar extends FlightAbility implements AddonAbility {
         }
 
         if (usageType.equals(UsageType.SOAR)) {
-            if (player.isGliding() == false) {
+            if (!player.isGliding()) {
                 player.setGliding(true);
             }
         }
@@ -180,6 +198,8 @@ public class Soar extends FlightAbility implements AddonAbility {
         ProjectKorra.plugin.getServer().getPluginManager().addPermission(new Permission("bending.ability.Soar"));
 
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.Cooldown", 10000);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.Duration", 120000);
+
 
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.03);
 
@@ -220,5 +240,17 @@ public class Soar extends FlightAbility implements AddonAbility {
     @Override
     public String getInstructions() {
         return "Pressing left-click with this ability will allow you to hover. Holding sneak while in the air will propel you wherever you look.";
+    }
+
+    @Override
+    public boolean isEnabled() {
+        boolean result;
+        if (!(ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.HoverEnabled", true)) &&
+        !(ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.FlightEnabled", true))) {
+            result = false;
+        } else {
+            result = true;
+        }
+        return result;
     }
 }

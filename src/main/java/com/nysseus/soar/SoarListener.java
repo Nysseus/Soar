@@ -2,7 +2,6 @@ package com.nysseus.soar;
 
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.ability.CoreAbility;
-import com.projectkorra.projectkorra.airbending.AirScooter;
 import com.projectkorra.projectkorra.airbending.Suffocate;
 import com.projectkorra.projectkorra.util.MovementHandler;
 import com.projectkorra.projectkorra.waterbending.blood.Bloodbending;
@@ -19,6 +18,7 @@ public class SoarListener implements Listener {
     public void onSneak(PlayerToggleSneakEvent event) {
         Player player = event.getPlayer();
         BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+        Soar soar = CoreAbility.getAbility(player, Soar.class);
 
         if (Suffocate.isBreathbent(player)) {
             event.setCancelled(true);
@@ -32,10 +32,12 @@ public class SoarListener implements Listener {
             event.setCancelled(true);
             return;
         }
+        if (!soar.FlightEnabled) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (event.getPlayer().isSneaking()) return;
-
-        Soar soar = CoreAbility.getAbility(player, Soar.class);
 
         if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER) && !player.isSneaking()) {
             soar.usageType = Soar.UsageType.SOAR;
@@ -50,6 +52,7 @@ public class SoarListener implements Listener {
     public void onClick(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+        Soar soar = CoreAbility.getAbility(player, Soar.class);
 
         if (Suffocate.isBreathbent(player)) {
             event.setCancelled(true);
@@ -63,11 +66,13 @@ public class SoarListener implements Listener {
             event.setCancelled(true);
             return;
         }
+        if (!soar.HoverEnabled) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (event.getAction() != Action.LEFT_CLICK_BLOCK && event.getAction() != Action.LEFT_CLICK_AIR) return;
         if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.isCancelled()) return;
-
-        Soar soar = CoreAbility.getAbility(player, Soar.class);
 
         if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER)) {
             soar.CancelMove(false);
