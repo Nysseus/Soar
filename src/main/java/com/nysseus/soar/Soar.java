@@ -51,7 +51,8 @@ public class Soar extends FlightAbility implements AddonAbility {
         isHovering = false;
 
         if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType().equals(Material.WATER)) {
-            CancelMove(true);
+            remove();
+            return;
         }
         if (usageType.equals(UsageType.SOAR) && !FlightEnabled) {
             remove();
@@ -103,15 +104,6 @@ public class Soar extends FlightAbility implements AddonAbility {
                 (usageType.equals(UsageType.SOAR) && !FlightEnabled) ||
                 (usageType.equals(UsageType.HOVER) && !HoverEnabled)) {
             CancelMove(true);
-            return;
-        }
-
-        if (usageType.equals(UsageType.SOAR) && !FlightEnabled) {
-            CancelMove(false);
-            return;
-        }
-        if (usageType.equals(UsageType.HOVER) && !HoverEnabled) {
-            CancelMove(false);
             return;
         }
 

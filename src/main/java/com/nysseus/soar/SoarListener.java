@@ -32,19 +32,18 @@ public class SoarListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (!soar.FlightEnabled) {
+        if (soar != null && !soar.FlightEnabled) {
             event.setCancelled(true);
             return;
         }
-
         if (event.getPlayer().isSneaking()) return;
-
-        if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER) && !player.isSneaking()) {
-            soar.usageType = Soar.UsageType.SOAR;
-        }
 
         if (soar == null && bPlayer.canBend(CoreAbility.getAbility(Soar.class))) {
             new Soar(player, Soar.UsageType.SOAR);
+            return;
+        }
+        if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER) && !player.isSneaking()) {
+            soar.usageType = Soar.UsageType.SOAR;
         }
     }
 
@@ -66,7 +65,7 @@ public class SoarListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (!soar.HoverEnabled) {
+        if (soar != null && !soar.HoverEnabled) {
             event.setCancelled(true);
             return;
         }
@@ -74,17 +73,17 @@ public class SoarListener implements Listener {
         if (event.getAction() != Action.LEFT_CLICK_BLOCK && event.getAction() != Action.LEFT_CLICK_AIR) return;
         if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.isCancelled()) return;
 
-        if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER)) {
-            soar.CancelMove(false);
-        }
-        if (soar != null && soar.usageType.equals(Soar.UsageType.SOAR)) {
-            soar.usageType = Soar.UsageType.HOVER;
-        }
-        if (soar != null && soar.usageType.equals(Soar.UsageType.SOAR)) {
-            soar.usageType = Soar.UsageType.HOVER;
-        }
         if (soar == null && bPlayer.canBend(CoreAbility.getAbility(Soar.class))) {
             new Soar(player, Soar.UsageType.HOVER);
+            return;
+        }
+        if (soar != null && soar.usageType.equals(Soar.UsageType.HOVER)) {
+            soar.CancelMove(false);
+            return;
+        }
+        if (soar != null && soar.usageType.equals(Soar.UsageType.SOAR)) {
+            soar.usageType = Soar.UsageType.HOVER;
+
         }
     }
 }
