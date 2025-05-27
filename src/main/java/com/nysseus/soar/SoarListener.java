@@ -3,6 +3,7 @@ package com.nysseus.soar;
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.airbending.Suffocate;
+import com.projectkorra.projectkorra.event.PlayerBindChangeEvent;
 import com.projectkorra.projectkorra.util.MovementHandler;
 import com.projectkorra.projectkorra.waterbending.blood.Bloodbending;
 import org.bukkit.entity.Player;
@@ -85,6 +86,19 @@ public class SoarListener implements Listener {
             soar.usageType = Soar.UsageType.HOVER;
 
         }
+    }
+    
+    @EventHandler
+    public void onSwitchSlot(PlayerBindChangeEvent event) {
+        Player player = event.getPlayer().getPlayer();
+        BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+        Soar soar = CoreAbility.getAbility(player, Soar.class);
+
+        if (soar == null) {
+            return;
+        }
+
+
     }
 }
 

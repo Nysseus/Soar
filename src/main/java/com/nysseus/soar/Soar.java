@@ -87,8 +87,8 @@ public class Soar extends FlightAbility implements AddonAbility {
 
             player.setFlying(false);
             player.setAllowFlight(false);
-            isHovering = false;
         }
+        isHovering = false;
         player.setFlySpeed(0.1f);
         player.setGliding(false);
         bPlayer.addCooldown(this);
@@ -98,9 +98,9 @@ public class Soar extends FlightAbility implements AddonAbility {
 
     @Override
     public void progress() {
-        if (!bPlayer.canBendIgnoreCooldowns(this) ||
+        if (!bPlayer.canBendIgnoreBindsCooldowns(this) ||
                 isWater(this.player.getLocation().getBlock()) ||
-                ((System.currentTimeMillis() > this.getStartTime() + Duration) && Duration >= 0) ||
+                ((System.currentTimeMillis() > this.getStartTime() + Duration) && Duration > 0) ||
                 (usageType.equals(UsageType.SOAR) && !FlightEnabled) ||
                 (usageType.equals(UsageType.HOVER) && !HoverEnabled)) {
             CancelMove(true);
@@ -218,7 +218,7 @@ public class Soar extends FlightAbility implements AddonAbility {
 
     @Override
     public String getVersion() {
-        return "1.0";
+        return "1.0.0";
     }
 
     @Override
