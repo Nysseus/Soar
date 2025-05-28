@@ -37,6 +37,7 @@ public class Soar extends FlightAbility implements AddonAbility {
     private float hoverSpeed;
     private long Duration;
     private long OffSlotTime;
+    private long OffSlotTimer;
 
     private static ArrayList<Class> abilitiesToRemove = new ArrayList<>();
 
@@ -50,6 +51,7 @@ public class Soar extends FlightAbility implements AddonAbility {
         FlightEnabled = ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.FlightEnabled", true);
         HoverEnabled = ConfigManager.defaultConfig.get().getBoolean("ExtraAbilities.Nysseus.Soar.HoverEnabled", true);
         hoverSpeed = (float) ConfigManager.defaultConfig.get().getDouble("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.03);
+        OffSlotTimer = ConfigManager.defaultConfig.get().getLong("ExtraAbilities.Nysseus.Soar.OffSlotTimer", 1000);
 
         isHovering = false;
 
@@ -171,8 +173,8 @@ public class Soar extends FlightAbility implements AddonAbility {
             isHovering = false;
             player.setFlySpeed(0.1f);
             player.setGliding(false);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 2, 2));
-            if (System.currentTimeMillis() > OffSlotTime + 2000) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, (int) (OffSlotTimer / 1000) + 1, 2, false, false));
+            if (System.currentTimeMillis() > OffSlotTime + OffSlotTimer) {
                 CancelMove(true);
             }
         }
@@ -215,6 +217,8 @@ public class Soar extends FlightAbility implements AddonAbility {
 
 
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.HoverSpeed", 0.03);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.SwitchOffTimer", 1000);
+
 
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.HoverEnabled", true);
         ConfigManager.getConfig().addDefault("ExtraAbilities.Nysseus.Soar.FlightEnabled", true);

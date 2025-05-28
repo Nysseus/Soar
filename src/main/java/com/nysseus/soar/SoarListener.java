@@ -1,10 +1,12 @@
 package com.nysseus.soar;
 
 import com.projectkorra.projectkorra.BendingPlayer;
+import com.projectkorra.projectkorra.ProjectKorra;
 import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.airbending.Suffocate;
 import com.projectkorra.projectkorra.util.MovementHandler;
 import com.projectkorra.projectkorra.waterbending.blood.Bloodbending;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -93,9 +95,9 @@ public class SoarListener implements Listener {
         Player player = event.getPlayer().getPlayer();
         BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
         Soar soar = CoreAbility.getAbility(player, Soar.class);
+        String newAbilityName = bPlayer.getAbilities().get(event.getNewSlot() + 1);
 
-
-        if (soar == null || (soar.usageType.equals(Soar.UsageType.OFFSLOT) && !bPlayer.getBoundAbility().getName().equals("Soar"))) {
+        if (soar == null || (soar.usageType.equals(Soar.UsageType.OFFSLOT) && !newAbilityName.equals("Soar"))) {
             return;
         }
 
