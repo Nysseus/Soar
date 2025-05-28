@@ -16,14 +16,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.permissions.Permission;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-
+import java.util.Map;
 
 public class Soar extends FlightAbility implements AddonAbility {
     public enum UsageType {
-        SOAR, HOVER
+        SOAR, HOVER, OFFSLOT
     }
     protected UsageType usageType;
 
@@ -34,6 +36,7 @@ public class Soar extends FlightAbility implements AddonAbility {
     private boolean isHovering;
     private float hoverSpeed;
     private long Duration;
+    private long OffSlotTime;
 
     private static ArrayList<Class> abilitiesToRemove = new ArrayList<>();
 
@@ -79,6 +82,10 @@ public class Soar extends FlightAbility implements AddonAbility {
     private boolean isOnGround() {
         Location loc = player.getLocation();
         return loc.getBlock().getRelative(BlockFace.DOWN).getType().isSolid();
+    }
+
+    protected void SetOffSlotTime() {
+        OffSlotTime = System.currentTimeMillis();
     }
 
     public void CancelMove(boolean override) {
@@ -154,6 +161,20 @@ public class Soar extends FlightAbility implements AddonAbility {
                 (System.currentTimeMillis() > this.getStartTime() + 500) &&
                 isHovering) {
             CancelMove(false);
+        }
+
+        if (usageType.equals(UsageType.OFFSLOT)) {
+            if(!(player.getGameMode().equals(GameMode.CREATIVE) || player.getGameMode().equals(GameMode.SPECTATOR))) {
+                player.setFlying(false);
+                player.setAllowFlight(false);
+            }
+            isHovering = false;
+            player.setFlySpeed(0.1f);
+            player.setGliding(false);
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 2, 2));
+            if (System.currentTimeMillis() > OffSlotTime + 2000) {
+                CancelMove(true);
+            }
         }
     }
 
